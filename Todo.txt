@@ -1,0 +1,31 @@
+MATTSON:
+Add multitheaded bank.cpp
+test on linux
+
+
+
+JAKE:
+Setting timeout on bad pin
+Checking for timeout
+shared resources with locks on balances
+
+
+initialization of bank to have
+Alice : Balance of $100
+b. Bob : Balance of $50
+c. Eve : Balance of $0
+
+
+SOMEONE:
+basic class structure including
+	user{
+		int balance
+		pin
+		timeout_time
+		}
+
+
+		
+things to watch for:
+overflow (balance timeout)
+tcp overflow
