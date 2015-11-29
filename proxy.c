@@ -256,6 +256,10 @@ service_client(int cfd, int sfd)
 int
 main(int argc, char *argv[])
 {
+    if (3 != argc) {
+      fprintf(stderr, "usage: %s localport remoteport\n", argv[0]);
+      exit(1);
+    }
     char *localaddr = "127.0.0.1";
     int localport = atoi(argv[1]);
     char *remoteaddr = "127.0.0.1";
@@ -263,10 +267,7 @@ main(int argc, char *argv[])
     int client, server;
     int master_sock;
 
-    if (5 != argc) {
-	fprintf(stderr, "usage: %s laddr lport rhost rport\n", argv[0]);
-	exit(1);
-    }
+
     assert(localport > 0);
     assert(remoteport > 0);
 
