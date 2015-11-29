@@ -135,10 +135,16 @@ int main(int argc , char *argv[])
             while(1){
             bzero(buffer,256);
             int n = read(new_fd,buffer,255);
+            if (n > 0){
             printf("%s\n", buffer);
-            if (send(new_fd, "Hello, world!", 13, 0) == -1)
+            if (send(new_fd, "Received Message", 17, 0) == -1)
                 perror("send");
+            }
+            else {
+              break;
+            }
               }
+            printf("closed connection\n");
             close(new_fd);
             exit(0);
         }
