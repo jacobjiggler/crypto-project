@@ -275,20 +275,21 @@ main(int argc, char *argv[])
 
     signal(SIGINT, cleanup);
     signal(SIGCHLD, sigreap);
-
     master_sock = create_server_sock(localaddr, localport);
     for (;;) {
-	if ((client = wait_for_connection(master_sock)) < 0)
-	    continue;
-	if ((server = open_remote_host(remoteaddr, remoteport)) < 0)
-	    continue;
-	if (!fork()) {
-	    syslog(LOG_NOTICE, "connection from %s fd=%d\n", client_hostname, client);
-	    syslog(LOG_INFO, "connected to %s:%d fd=%d\n", remoteaddr, remoteport, server);
-	    service_client(client, server);
-	}
-	close(client);
-	close(server);
+    	if ((client = wait_for_connection(master_sock)) < 0)
+    	    continue;
+      printf("Incoming Connection\n");
+    	if ((server = open_remote_host(remoteaddr, remoteport)) < 0)
+    	    continue;
+      printf("Outgoing Connection\n");
+    	if (!fork()) {
+    	    syslog(LOG_NOTICE, "connection from %s fd=%d\n", client_hostname, client);
+    	    syslog(LOG_INFO, "connected to %s:%d fd=%d\n", remoteaddr, remoteport, server);
+    	    service_client(client, server);
+    	}
+    	close(client);
+    	close(server);
     }
 
 }
