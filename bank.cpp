@@ -18,6 +18,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
+#include <map>
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
@@ -41,6 +42,9 @@ void *get_in_addr(struct sockaddr *sa)
 
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
+
+
+std::map<int, int> users;
 
 int main(int argc , char *argv[])
 {
