@@ -8,7 +8,7 @@
 //#include<arpa/inet.h> //inet_addr
 //#include<netdb.h> //hostent
 
-std::map<int, int> users;
+map<int, int> users;
 
 int main(int argc , char *argv[])
 {
