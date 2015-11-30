@@ -1,3 +1,5 @@
+#include "userinfo.cpp"
+//#include <mutex>
 /*
 ** bank.cpp -- a stream socket server demo
 */
@@ -69,7 +71,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 
-std::map<int, int> users;
+std::map<std::string, userInfo> users;
 
 int main(int argc , char *argv[])
 {
