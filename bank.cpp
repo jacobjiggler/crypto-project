@@ -20,6 +20,8 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
+#include <vector>
 #include <map>
 
 #define BACKLOG 10     // how many pending connections queue will hold
@@ -45,8 +47,22 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-
 std::map<std::string, userInfo> users;
+
+void users_init(){
+  std::string line;
+  std::ifstream myfile ("bankinit.txt");
+  if (myfile.is_open())
+  {
+    std::vector
+    while ( getline (myfile,line) )
+    {
+      std::cout << line << '\n';
+    }
+    myfile.close();
+  }
+  else std::cout << "Unable to open file";   
+}
 
 int main(int argc , char *argv[])
 {
@@ -54,6 +70,7 @@ int main(int argc , char *argv[])
       std::cout << "bad arguments" << std::endl;
       return 1;
     }
+	users_init();
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
