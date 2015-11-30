@@ -22,6 +22,31 @@
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
+int session(int new_fd){
+  char buffer[30];
+  while(1){
+    bzero(buffer,30);
+    int n = read(new_fd,buffer,30);
+    if (n > 0){
+      printf("%s\n", buffer);
+      if (send(new_fd, "Received Message", 17, 0) == -1)
+          perror("send");
+    }
+    else {
+      return -1;
+    }
+    //checks
+    if (strncmp(buffer,"a",1))
+      printf("asdf");
+  }
+    return 1;
+//if logout command received, call another user session
+}
+
+int user_session(int new_fd, int user){
+  return 1;
+}
+
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -131,19 +156,7 @@ int main(int argc , char *argv[])
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
-            char buffer[256];
-            while(1){
-            bzero(buffer,256);
-            int n = read(new_fd,buffer,255);
-            if (n > 0){
-            printf("%s\n", buffer);
-            if (send(new_fd, "Received Message", 17, 0) == -1)
-                perror("send");
-            }
-            else {
-              break;
-            }
-              }
+            session(new_fd);
             printf("closed connection\n");
             close(new_fd);
             exit(0);
