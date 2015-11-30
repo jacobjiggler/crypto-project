@@ -1,7 +1,7 @@
 #include "userinfo.cpp"
-//#include <mutex>
+#include <mutex>
 /*
-** bank.cpp -- a stream socket server demo
+** bank.cpp
 */
 
 #include <stdio.h>
@@ -47,13 +47,14 @@ int user_session(int new_fd, userInfo user){
       else if(strncmp("withdraw[\n", buffer, 9)==0){
         char amount[n-10];
         //overflow check
-        if (n > 18){
-          if (send(new_fd, "Pick a smaller number buddy", 28, 0) == -1)
+        if (n > 18 || strncmp("-\n", buffer + 9, 1) == 0){
+          if (send(new_fd, "Pick a legitimate number buddy", 28, 0) == -1)
               perror("send");
           continue;
         }
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
+        temp = temp * -1;
         printf("%d\n", temp);
         int error = user.add_balance(temp);
         //overflow(too high)
@@ -70,15 +71,15 @@ int user_session(int new_fd, userInfo user){
         }
         std::string s = std::to_string(user.get_balance());
         char const *pchar = s.c_str();
-        if (send(new_fd, "New Login Balance:", 19, 0) == -1)
-            perror("send");
+        //if (send(new_fd, "New Balance:", 13, 0) == -1)
+            //perror("send");
         if (send(new_fd, pchar, s.length() + 1, 0) == -1)
             perror("send");
         continue;
 
       }
       //transfer
-      else if (1){
+      else if (0){
         //CODE ME IN
         continue;
       }
@@ -197,6 +198,11 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc , char *argv[])
 {
+    //temp user for testing. remove this code later
+    userInfo temp_user;
+    temp_user.init(3333,300);
+    users.insert(std::pair<std::string, userInfo>("123",temp_user));
+
     if (argc !=  2){
       std::cout << "bad arguments" << std::endl;
       return 1;
