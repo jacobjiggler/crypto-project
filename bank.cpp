@@ -48,7 +48,9 @@ int user_session(int new_fd, userInfo user){
         char amount[n-10];
         //overflow check
         if (n > 18){
-          //give error and continue
+          if (send(new_fd, "Pick a smaller number buddy", 28, 0) == -1)
+              perror("send");
+          continue;
         }
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
@@ -77,7 +79,8 @@ int user_session(int new_fd, userInfo user){
       }
       //transfer
       else if (1){
-        //later
+        //CODE ME IN
+        continue;
       }
       //logout
         else if(strncmp("logout\n", buffer, 6)==0){
@@ -85,7 +88,9 @@ int user_session(int new_fd, userInfo user){
               perror("send");
           return 1;
         }
-      //bad command
+        //command not recognized
+        if (send(new_fd, "I didn't recognize your command. Check yo spellin!", 51, 0) == -1)
+            perror("send");
     }
     else {
       return -1;
