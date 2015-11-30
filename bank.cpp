@@ -1,7 +1,7 @@
 #include "userinfo.cpp"
-//#include <mutex>
+#include <mutex>
 /*
-** bank.cpp -- a stream socket server demo
+** bank.cpp
 */
 
 #include <stdio.h>
@@ -24,7 +24,156 @@
 #include <vector>
 #include <map>
 
+
 #define BACKLOG 10     // how many pending connections queue will hold
+std::map<std::string, userInfo> users;
+int attempts = 0;
+
+int user_session(int new_fd, userInfo user){
+  char buffer[30];
+  while(1){
+    bzero(buffer,30);
+    int n = read(new_fd,buffer,30);
+    if (n > 0){
+      //parsing
+
+      //balance
+      if( strncmp("balance\n", buffer, 7)==0){
+        std::string s = std::to_string(user.get_balance());
+        char const *pchar = s.c_str();
+        if (send(new_fd, pchar, s.length() + 1, 0) == -1)
+            perror("send");
+        continue;
+      }
+      //withdraw
+      else if(strncmp("withdraw[\n", buffer, 9)==0){
+        char amount[n-10];
+        //overflow check
+        if (n > 18 || strncmp("-\n", buffer + 9, 1) == 0){
+          if (send(new_fd, "Pick a legitimate number buddy", 28, 0) == -1)
+              perror("send");
+          continue;
+        }
+        strncpy(amount, buffer + 9, n-10);
+        int temp = atoi(amount);
+        temp = temp * -1;
+        printf("%d\n", temp);
+        int error = user.add_balance(temp);
+        //overflow(too high)
+        if (error > 0){
+          if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
+              perror("send");
+          continue;
+        }
+        //not enough balance
+        else if(error < 0){
+          if (send(new_fd, "Insufficient funds", 19, 0) == -1)
+              perror("send");
+          continue;
+        }
+        std::string s = std::to_string(user.get_balance());
+        char const *pchar = s.c_str();
+        //if (send(new_fd, "New Balance:", 13, 0) == -1)
+            //perror("send");
+        if (send(new_fd, pchar, s.length() + 1, 0) == -1)
+            perror("send");
+        continue;
+
+      }
+      //transfer
+      else if (0){
+        //CODE ME IN
+        continue;
+      }
+      //logout
+        else if(strncmp("logout\n", buffer, 6)==0){
+          if (send(new_fd, "Logging out", 12, 0) == -1)
+              perror("send");
+          return 1;
+        }
+        //command not recognized
+        if (send(new_fd, "I didn't recognize your command. Check yo spellin!", 51, 0) == -1)
+            perror("send");
+    }
+    else {
+      return -1;
+    }
+
+  }
+  return 1;
+}
+
+int session(int new_fd){
+  char buffer[30];
+  while(1){
+    bzero(buffer,30);
+    int n = read(new_fd,buffer,30);
+    if (n > 0){
+      printf("%d\n", n);
+      if (n > 7 && strncmp("login[\n", buffer, 6) == 0){
+        char username[n-7];
+        printf("ahhh yea\n");
+        strncpy(username,buffer+ 6, n-7);
+        printf("%s\n",username);
+        //if user in users list
+        std::map<std::string, userInfo>::iterator it;
+        std::string usr(username);
+        it = users.find(usr);
+        if(it != users.end()){
+          if (send(new_fd, "Please enter your pin, friend", 31, 0) == -1)
+              perror("send");
+          while(1){
+            //attempts check
+            if (attempts > 5){
+              if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
+                  perror("send");
+              break;
+            }
+            bzero(buffer,30);
+            int n = read(new_fd,buffer,30);
+            if (n > 0){
+              //check if pins are the same
+              if (it->second.get_pin() == atoi(buffer)){
+                if (send(new_fd, "Logged in", 10, 0) == -1)
+                    perror("send");
+                  if (user_session(new_fd,it->second) == -1)
+                    return -1;
+                  break;
+              }
+              else {
+                if (send(new_fd, "Bad pin", 8, 0) == -1)
+                    perror("send");
+                    //increment attempt counter
+                    attempts++;
+              }
+            }
+            else {
+              return -1;
+            }
+          }
+        }
+        else {
+          //not a real username
+          if (send(new_fd, "The user you have entered does not exist. Maybe they died?", 60, 0) == -1)
+              perror("send");
+        }
+        }
+      else {
+        if (send(new_fd, "Please enter a valid username in the format login[username]", 60, 0) == -1)
+            perror("send");
+      }
+      if (send(new_fd, "Received Message", 17, 0) == -1)
+          perror("send");
+    }
+    else {
+      return -1;
+    }
+
+}
+    return 1;
+}
+
+
 
 void sigchld_handler(int s)
 {
@@ -47,8 +196,6 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-std::map<std::string, userInfo> users;
-
 void users_init(){
   std::string line;
   std::ifstream myfile ("bankinit.txt");
@@ -66,6 +213,11 @@ void users_init(){
 
 int main(int argc , char *argv[])
 {
+    //temp user for testing. remove this code later
+    userInfo temp_user;
+    temp_user.init(3333,300);
+    users.insert(std::pair<std::string, userInfo>("123",temp_user));
+
     if (argc !=  2){
       std::cout << "bad arguments" << std::endl;
       return 1;
@@ -150,14 +302,8 @@ int main(int argc , char *argv[])
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
-            char buffer[256];
-            while(1){
-            bzero(buffer,256);
-            int n = read(new_fd,buffer,255);
-            printf("%s\n", buffer);
-            if (send(new_fd, "Hello, world!", 13, 0) == -1)
-                perror("send");
-              }
+            session(new_fd);
+            printf("closed connection\n");
             close(new_fd);
             exit(0);
         }

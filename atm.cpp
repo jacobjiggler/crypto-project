@@ -157,7 +157,7 @@ int main(int argc , char *argv[])
     //connect to host
     c.conn(host , port);
     string input;
-    cout << "Please input your card followed by .card" << endl;
+    cout << "Please input your username followed by .card" << endl;
     while(1){
       //send some data
       cin >> input;
