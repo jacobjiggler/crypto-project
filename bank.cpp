@@ -102,11 +102,42 @@ int user_session(int new_fd, userInfo user){
         char username2[n - (index + 2)];
         printf("start index: %d, length: %d \n", index + 1, n - (index + 2));
         strncpy(username2, buffer + index + 1, n - (index + 2));
-        printf("temp3 \n");
-        printf("username %s\n",username2);
+        printf("username2 %s\n",username2);
+        std::map<std::string, userInfo>::iterator it;
+        std::string usr(username2);
+        it = users.find(usr);
+        if(it != users.end()){
+        userInfo user2 = it->second;
+        int error = user.error_check(temp2);
+        int error2 = user2.error_check(temp);
+        //not enough balance
+        if(error < 0){
+          if (send(new_fd, "Insufficient funds", 19, 0) == -1)
+              perror("send");
+
+          continue;
+        }
+        if (error2 > 0){
+          if (send(new_fd, "Their balance is too high with the new number. Tell them to start a new bank account!", 86, 0) == -1)
+              perror("send");
+
+          continue;
+        }
+        user.add_balance(temp2);
+        user2.add_balance(temp);
+        if (send(new_fd, "Sent the $$$$", 14, 0) == -1)
+            perror("send");
+        continue;
+        }
+        else {
+          //not a real username
+          if (send(new_fd, "The user you have entered does not exist. Maybe they died?", 60, 0) == -1)
+              perror("send");
+          continue;
+        }
+        //find user
         /*
         //run account checks on both
-        int error = user.add_balance(temp);
         //overflow(too high)
         if (error > 0){
           if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
