@@ -209,7 +209,7 @@ int main(int argc , char *argv[])
 	if (username != "abc"){
     	//connect to host
     	c.conn(host , port);
-		c.send_data("login[" + username + "]");
+		c.send_data("login[" + input + "]");
 		cout<<"----------------------------\n\n";
 		cout<<c.receive(1024);
 		cout<<"\n\n----------------------------\n\n";
