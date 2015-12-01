@@ -157,17 +157,35 @@ int main(int argc , char *argv[])
     //connect to host
     c.conn(host , port);
     string input;
-    cout << "Please input your username followed by .card" << endl;
-    while(1){
-      //send some data
-      cin >> input;
-      c.send_data(input);
+    cout << "Please input your card number: " << endl;
+	cin >> input;
+	  std::string line;
+	  std::string username = "abc";
+  	  std::ifstream myfile (input + ".card");
+  	  if (myfile.is_open())
+  	  {
+		while ( getline (myfile,line) )
+    	{
+			username = line;
+		}
+		myfile.close();
+	  }
+	  else std::cout << "Unable to open card"; 
+      
+    if (username != "abc"){
 
-      //receive and echo reply
-      cout<<"----------------------------\n\n";
-      cout<<c.receive(1024);
-      cout<<"\n\n----------------------------\n\n";
-    }
+		while(1){
+		  //send some data
+		  
+			c.send_data(username);
+
+		  	//receive and echo reply
+		  	cout<<"----------------------------\n\n";
+		  	cout<<c.receive(1024);
+		  	cout<<"\n\n----------------------------\n\n";
+		
+		}
+	}
     //done
     return 0;
 }
