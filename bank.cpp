@@ -24,11 +24,19 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <ctime>
+#include <chrono>
 
 
 #define BACKLOG 10     // how many pending connections queue will hold
 std::map<std::string, userInfo> users;
 int attempts = 0;
+std::chrono::time_point<std::chrono::system_clock> last_reset;
+
+void reset_attempts(){
+	attempts = 0;
+	last_reset = std::chrono::system_clock::now();
+}
 
 int user_session(int new_fd, userInfo user){
   char buffer[30];
@@ -157,6 +165,8 @@ int user_session(int new_fd, userInfo user){
 int session(int new_fd){
   //receive RSA here
   char buffer[30];
+  std::chrono::time_point<std::chrono::system_clock> now;
+  std::chrono::duration<double, std::ratio<1, 1>> duration;
   while(1){
     bzero(buffer,30);
     int n = read(new_fd,buffer,30);
@@ -173,6 +183,11 @@ int session(int new_fd){
           if (send(new_fd, "Please enter your pin, friend", 31, 0) == -1)
               perror("send");
           while(1){
+			now = std::chrono::system_clock::now();
+			duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
+			if (duration.count() > 1200){
+				reset_attempts();			
+			}
             //attempts check
             if (attempts > 5){
               if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
@@ -296,6 +311,7 @@ int main(int argc , char *argv[])
       std::cout << "bad arguments" << std::endl;
       return 1;
     }
+	last_reset = std::chrono::system_clock::now();
 	users_init();
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
@@ -360,8 +376,8 @@ int main(int argc , char *argv[])
     }
 
     printf("server: waiting for connections...\n");
-
     while(1) {  // main accept() loop
+		
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1) {
