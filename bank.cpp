@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <map>
 
@@ -196,15 +197,38 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
+
 void users_init(){
   std::string line;
   std::ifstream myfile ("bankinit.txt");
   if (myfile.is_open())
   {
-    std::vector
+    std::vector<std::string> line_info;
+	int pin;
+	int balance;
     while ( getline (myfile,line) )
     {
-      std::cout << line << '\n';
+      line_info = split(line, ' ');
+      userInfo new_user;
+	  pin = atoi(line_info[2].c_str());
+	  balance = atoi(line_info[1].c_str());
+      new_user.init(pin,balance);
+      users.insert(std::pair<std::string, userInfo>(line_info[0],new_user));
+	  //std::cout << line_info[0] << pin << balance;
     }
     myfile.close();
   }
@@ -214,9 +238,9 @@ void users_init(){
 int main(int argc , char *argv[])
 {
     //temp user for testing. remove this code later
-    userInfo temp_user;
-    temp_user.init(3333,300);
-    users.insert(std::pair<std::string, userInfo>("123",temp_user));
+    //userInfo temp_user;
+    //temp_user.init(3333,300);
+    //users.insert(std::pair<std::string, userInfo>("123",temp_user));
 
     if (argc !=  2){
       std::cout << "bad arguments" << std::endl;
