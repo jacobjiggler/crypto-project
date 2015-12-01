@@ -277,7 +277,7 @@ void users_init(){
     }
     myfile.close();
   }
-  else std::cout << "Unable to open file";   
+  else std::cout << "Unable to open file";
 }
 
 int main(int argc , char *argv[])
@@ -381,3 +381,12 @@ int main(int argc , char *argv[])
 
     return 0;
 }
+
+
+//add encrypted wrapper for this
+  //send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
+  //the above message is 71 chars
+  //dont forget that you should encrypt the 71 chars and then add 1 to the length of your ciphertext
+
+  //    int n = read(new_fd,buffer,30);
+  // add decrypter wrapper for this where it returns the amount of chars excluding the null char at the end and puts the decrypted text in buffer
