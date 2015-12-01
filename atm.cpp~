@@ -156,7 +156,7 @@ int main(int argc , char *argv[])
     }
 
 
-	 //connect to host
+	 /*//connect to host
 
      c.conn(host , port);
 
@@ -188,9 +188,9 @@ int main(int argc , char *argv[])
 
      //done
 
-     return 0;
+     return 0;*/
 
-	/*string input;
+	string input;
     cout << "Please input your card number: " << endl;
 	cin >> input;
 	std::string line;
@@ -201,6 +201,7 @@ int main(int argc , char *argv[])
 		while ( getline (myfile,line) )
 		{
 			username = line;
+			std::cout << username << std::endl;
 		}
 		myfile.close();
 	  }
@@ -221,5 +222,5 @@ int main(int argc , char *argv[])
 		}
 	}
     //done
-    return 0;*/
+    return 0;
 }
