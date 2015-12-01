@@ -2,6 +2,7 @@
     Some code from binarytides used as reference
 */
 #include<iostream>    //cout
+#include<fstream>
 #include<stdio.h> //printf
 #include<string.h>    //strlen
 #include<string>  //string
@@ -157,18 +158,36 @@ int main(int argc , char *argv[])
     //connect to host
     c.conn(host , port);
     string input;
-    cout << "Please input your username followed by .card" << endl;
-    //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
-    while(1){
-      //send some data
-      cin >> input;
-      c.send_data(input);
+    cout << "Please input your card number: " << endl;
+	cin >> input;
+	  std::string line;
+	  std::string username = "abc";
+  	  std::ifstream myfile (input + ".card");
+  	  if (myfile.is_open())
+  	  {
+		while ( getline (myfile,line) )
+    	{
+			username = line;
+		}
+		myfile.close();
+	  }
+	  else std::cout << "Unable to open card"; 
+      
+    if (username != "abc"){
 
-      //receive and echo reply
-      cout<<"----------------------------\n\n";
-      cout<<c.receive(1024);
-      cout<<"\n\n----------------------------\n\n";
-    }
+		while(1){
+		  //send some data
+		  //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
+		  
+			c.send_data(username);
+
+		  	//receive and echo reply
+		  	cout<<"----------------------------\n\n";
+		  	cout<<c.receive(1024);
+		  	cout<<"\n\n----------------------------\n\n";
+		
+		}
+	}
     //done
     return 0;
 }
