@@ -156,7 +156,7 @@ int main(int argc , char *argv[])
     }
 
 
-	 //connect to host
+	 /*//connect to host
 
      c.conn(host , port);
 
@@ -188,9 +188,9 @@ int main(int argc , char *argv[])
 
      //done
 
-     return 0;
+     return 0;*/
 
-	/*string input;
+	string input;
     cout << "Please input your card number: " << endl;
 	cin >> input;
 	std::string line;
@@ -209,17 +209,23 @@ int main(int argc , char *argv[])
 	if (username != "abc"){
     	//connect to host
     	c.conn(host , port);
+		c.send_data("login[" + username + "]");
+		cout<<"----------------------------\n\n";
+		cout<<c.receive(1024);
+		cout<<"\n\n----------------------------\n\n";
+		
 		while(1){
 		  //send some data
 		  //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
+			cin >> input;			
 			c.send_data(input);
 		  	//receive and echo reply
 		  	cout<<"----------------------------\n\n";
 		  	cout<<c.receive(1024);
 		  	cout<<"\n\n----------------------------\n\n";
-			cin >> input;
+			
 		}
 	}
     //done
-    return 0;*/
+    return 0;
 }
