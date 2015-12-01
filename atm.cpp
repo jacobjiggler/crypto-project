@@ -2,6 +2,7 @@
     Some code from binarytides used as reference
 */
 #include<iostream>    //cout
+#include<fstream>
 #include<stdio.h> //printf
 #include<string.h>    //strlen
 #include<string>  //string
@@ -176,6 +177,7 @@ int main(int argc , char *argv[])
 
 		while(1){
 		  //send some data
+		  //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
 		  
 			c.send_data(username);
 

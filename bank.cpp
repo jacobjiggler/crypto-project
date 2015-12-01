@@ -82,8 +82,52 @@ int user_session(int new_fd, userInfo user){
 
       }
       //transfer
-      else if (0){
-        //CODE ME IN
+      else if (strncmp("transfer[\n", buffer, 9)==0){
+
+        //find index of first ]
+        char * pch;
+        pch=strchr(buffer,']');
+        int index = pch-buffer + 1;
+
+        char amount[index-9];
+        if (index-9 > 8 || strncmp("-\n", buffer + 9, 1) == 0){
+          if (send(new_fd, "Pick a legitimate number buddy", 28, 0) == -1)
+              perror("send");
+          continue;
+        }
+        strncpy(amount, buffer + 9, index-9);
+        int temp = atoi(amount);
+        int temp2 = temp * -1;
+        printf("temp %d\n", temp);
+        char username2[n - (index + 2)];
+        printf("start index: %d, length: %d \n", index + 1, n - (index + 2));
+        strncpy(username2, buffer + index + 1, n - (index + 2));
+        printf("temp3 \n");
+        printf("username %s\n",username2);
+        /*
+        //run account checks on both
+        int error = user.add_balance(temp);
+        //overflow(too high)
+        if (error > 0){
+          if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
+              perror("send");
+
+          continue;
+        }
+        //not enough balance
+        else if(error < 0){
+          if (send(new_fd, "Insufficient funds", 19, 0) == -1)
+              perror("send");
+
+          continue;
+        }
+        std::string s = std::to_string(user.get_balance());
+        char const *pchar = s.c_str();
+        //if (send(new_fd, "New Balance:", 13, 0) == -1)
+            //perror("send");
+        if (send(new_fd, pchar, s.length() + 1, 0) == -1)
+            perror("send");
+            */
         continue;
       }
       //logout
@@ -105,6 +149,7 @@ int user_session(int new_fd, userInfo user){
 }
 
 int session(int new_fd){
+  //receive RSA here
   char buffer[30];
   while(1){
     bzero(buffer,30);
@@ -232,7 +277,7 @@ void users_init(){
     }
     myfile.close();
   }
-  else std::cout << "Unable to open file";   
+  else std::cout << "Unable to open file";
 }
 
 int main(int argc , char *argv[])
@@ -336,3 +381,12 @@ int main(int argc , char *argv[])
 
     return 0;
 }
+
+
+//add encrypted wrapper for this
+  //send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
+  //the above message is 71 chars
+  //dont forget that you should encrypt the 71 chars and then add 1 to the length of your ciphertext
+
+  //    int n = read(new_fd,buffer,30);
+  // add decrypter wrapper for this where it returns the amount of chars excluding the null char at the end and puts the decrypted text in buffer
