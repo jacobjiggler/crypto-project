@@ -58,7 +58,7 @@ int user_session(int new_fd, userInfo user){
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
         temp = temp * -1;
-        printf("%d\n", temp);
+        printf("amount: %d\n", temp);
         int error = user.add_balance(temp);
         //overflow(too high)
         if (error > 0){
@@ -98,7 +98,6 @@ int user_session(int new_fd, userInfo user){
         strncpy(amount, buffer + 9, index-9);
         int temp = atoi(amount);
         int temp2 = temp * -1;
-        printf("temp %d\n", temp);
         char username2[n - (index + 2)];
         printf("start index: %d, length: %d \n", index + 1, n - (index + 2));
         strncpy(username2, buffer + index + 1, n - (index + 2));
@@ -135,30 +134,6 @@ int user_session(int new_fd, userInfo user){
               perror("send");
           continue;
         }
-        //find user
-        /*
-        //run account checks on both
-        //overflow(too high)
-        if (error > 0){
-          if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
-              perror("send");
-
-          continue;
-        }
-        //not enough balance
-        else if(error < 0){
-          if (send(new_fd, "Insufficient funds", 19, 0) == -1)
-              perror("send");
-
-          continue;
-        }
-        std::string s = std::to_string(user.get_balance());
-        char const *pchar = s.c_str();
-        //if (send(new_fd, "New Balance:", 13, 0) == -1)
-            //perror("send");
-        if (send(new_fd, pchar, s.length() + 1, 0) == -1)
-            perror("send");
-            */
         continue;
       }
       //logout
@@ -186,10 +161,8 @@ int session(int new_fd){
     bzero(buffer,30);
     int n = read(new_fd,buffer,30);
     if (n > 0){
-      printf("%d\n", n);
       if (n > 7 && strncmp("login[\n", buffer, 6) == 0){
         char username[n-7];
-        printf("ahhh yea\n");
         strncpy(username,buffer+ 6, n-7);
         printf("%s\n",username);
         //if user in users list
@@ -236,6 +209,7 @@ int session(int new_fd){
         }
         }
       else {
+        printf("login error. here is buffer: %s \n", buffer);
         if (send(new_fd, "Please enter a valid username in the format login[username]", 60, 0) == -1)
             perror("send");
       }
