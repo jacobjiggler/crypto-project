@@ -158,6 +158,7 @@ int main(int argc , char *argv[])
     c.conn(host , port);
     string input;
     cout << "Please input your username followed by .card" << endl;
+    //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
     while(1){
       //send some data
       cin >> input;
