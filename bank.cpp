@@ -35,10 +35,15 @@
 std::map<std::string, userInfo> users;
 int attempts = 0;
 std::chrono::time_point<std::chrono::system_clock> last_reset;
+pthread_mutex_t attempts_lock;
+pthread_mutex_t users_lock;
 
 void reset_attempts(){
+	pthread_mutex_lock(&attempts_lock);
 	attempts = 0;
 	last_reset = std::chrono::system_clock::now();
+	pthread_mutex_unlock(&attempts_lock);
+
 }
 
 int user_session(int new_fd, userInfo& user){
@@ -51,7 +56,9 @@ int user_session(int new_fd, userInfo& user){
 
       //balance
       if( strncmp("balance\n", buffer, 7)==0){
+				pthread_mutex_lock(&users_lock);
         std::string s = std::to_string(user.get_balance());
+				pthread_mutex_unlock(&users_lock);
         char const *pchar = s.c_str();
         if (send(new_fd, pchar, s.length() + 1, 0) == -1)
             perror("send");
@@ -69,7 +76,9 @@ int user_session(int new_fd, userInfo& user){
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
         temp = temp * -1;
+				pthread_mutex_lock(&users_lock);
         int error = user.add_balance(temp);
+				pthread_mutex_unlock(&users_lock);
         //overflow(too high)
         if (error > 0){
           if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
@@ -82,7 +91,9 @@ int user_session(int new_fd, userInfo& user){
               perror("send");
           continue;
         }
+				pthread_mutex_lock(&users_lock);
         std::string s = std::to_string(user.get_balance());
+				pthread_mutex_unlock(&users_lock);
         char const *pchar = s.c_str();
         //if (send(new_fd, "New Balance:", 13, 0) == -1)
             //perror("send");
@@ -113,11 +124,15 @@ int user_session(int new_fd, userInfo& user){
         printf("username2 %s\n",username2);
         std::map<std::string, userInfo>::iterator it;
         std::string usr(username2);
+				pthread_mutex_lock(&users_lock);
         it = users.find(usr);
+				pthread_mutex_unlock(&users_lock);
         if(it != users.end()){
+				pthread_mutex_lock(&users_lock);
         userInfo &user2 = it->second;
         int error = user.error_check(temp2);
         int error2 = user2.error_check(temp);
+				pthread_mutex_unlock(&users_lock);
         //not enough balance
         if(error < 0){
           if (send(new_fd, "Insufficient funds", 19, 0) == -1)
@@ -131,8 +146,10 @@ int user_session(int new_fd, userInfo& user){
 
           continue;
         }
+				pthread_mutex_lock(&users_lock);
         user.add_balance(temp2);
         user2.add_balance(temp);
+				pthread_mutex_unlock(&users_lock);
         if (send(new_fd, "Sent the $$$$", 14, 0) == -1)
             perror("send");
         continue;
@@ -192,15 +209,17 @@ int session(int new_fd){
 							reset_attempts();
 						}
 						//attempts check
+						pthread_mutex_lock(&attempts_lock);
 						if (attempts > 4){
 							if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
 									perror("send");
 							return 0;
 						}
+						pthread_mutex_unlock(&attempts_lock);
             if (n > 0){
               //check if pins are the same
               if (it->second.get_pin() == atoi(buffer)){
-                if (send(new_fd, "Logged in", 10, 0) == -1)
+                if (send(new_fd, "Logged in. Available commands: balance, withdraw, transfer, logout", 67, 0) == -1)
                     perror("send");
                   if (user_session(new_fd,(it->second)) == -1)
                     return -1;
@@ -210,7 +229,9 @@ int session(int new_fd){
                 if (send(new_fd, "Bad pin", 8, 0) == -1)
                     perror("send");
                     //increment attempt counter
+										pthread_mutex_lock(&attempts_lock);
                     attempts++;
+										pthread_mutex_unlock(&attempts_lock);
               }
             }
             else {
@@ -225,7 +246,7 @@ int session(int new_fd){
         }
         }
       else {
-        if (send(new_fd, "Please enter a valid username in the format login[username]", 60, 0) == -1)
+        if (send(new_fd, "something went wrong. The ATM should use the format login[username]", 68, 0) == -1)
             perror("send");
       }
       if (send(new_fd, "Received Message", 17, 0) == -1)
@@ -278,6 +299,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 void users_init(){
+	pthread_mutex_lock(&users_lock);
   std::string line;
   std::ifstream myfile ("bankinit.txt");
   if (myfile.is_open())
@@ -298,6 +320,7 @@ void users_init(){
     myfile.close();
   }
   else std::cout << "Unable to open file";
+	pthread_mutex_unlock(&users_lock);
 }
 
 void *connection_handler(void* input){
@@ -319,8 +342,10 @@ void *admin_panel(void*){
 			std::map<std::string, userInfo>::iterator it;
 			it = users.find(username);
 			if(it != users.end()){
+			pthread_mutex_lock(&users_lock);
 			userInfo &user2 = it->second;
 			std::cout << "balance: " + std::to_string(user2.get_balance()) << std::endl;
+			pthread_mutex_unlock(&users_lock);
 			continue;
 		}
 		else {
@@ -342,8 +367,10 @@ void *admin_panel(void*){
 				std::cout << "That user has too much mulah. Please have them create a new account" << std::endl;
 				continue;
 			}
+			pthread_mutex_lock(&users_lock);
 			user.add_balance(std::stoi(amount));
 			std::cout << "balance: " + std::to_string(user.get_balance()) << std::endl;
+			pthread_mutex_unlock(&users_lock);
 			continue;
 	}
 	else{
