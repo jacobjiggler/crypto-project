@@ -25,11 +25,11 @@ std::string RSADecrypt(std::string &input, CryptoPP::RSA::PrivateKey pri)
 int main(int argc, char* argv[])
 {
 	//Don't send messages larger than 1023 bits
-	CryptoPP::AutoSeededRandomPool rng;
-	CryptoPP::InvertibleRSAFunction params;
-	params.GenerateRandomWithKeySize(rng, 1024);
-	CryptoPP::RSA::PrivateKey privateKey(params);
-	CryptoPP::RSA::PublicKey publicKey(params);
+	CryptoPP::AutoSeededRandomPool rng;	//Create a random pool
+	CryptoPP::InvertibleRSAFunction params; //Create a public/private key struct
+	params.GenerateRandomWithKeySize(rng, 1024); //Generate random public/private key pair
+	CryptoPP::RSA::PrivateKey privateKey(params); //Define private key
+	CryptoPP::RSA::PublicKey publicKey(params); //Define public key
 	std::string plaintext = "transfer[987][123]";
 	std::string ciphertext = RSAEncrypt(plaintext, publicKey);
 	std::cout<<"Plaintext: "<<plaintext<<std::endl;

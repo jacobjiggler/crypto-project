@@ -154,8 +154,11 @@ int main(int argc , char *argv[])
       cout << "bad port" << endl;
       return 1;
     }
-
+	
+	c.conn(host , port);
+	while(1){
 	string input;
+	string bank_msg = "";
     cout << "Please input your card number: " << endl;
 	cin >> input;
 	std::string line;
@@ -169,27 +172,28 @@ int main(int argc , char *argv[])
 		}
 		myfile.close();
 	  }
-	  else std::cout << "Unable to open card"; 
+	  else std::cout << "Unable to open card\n"; 
 	  
 	if (username != "abc"){
     	//connect to host
-    	c.conn(host , port);
 		c.send_data("login[" + username + "]");
 		cout<<"----------------------------\n\n";
 		cout<<c.receive(1024);
 		cout<<"\n\n----------------------------\n\n";
 		
-		while(1){
+		while(bank_msg!="Logging out"){
 		  //send some data
 		  //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
-			cin >> input;			
+			cin >> input;		
 			c.send_data(input);
 		  	//receive and echo reply
 		  	cout<<"----------------------------\n\n";
-		  	cout<<c.receive(1024);
+			bank_msg = c.receive(1024);
+		  	cout<<bank_msg;
 		  	cout<<"\n\n----------------------------\n\n";
 			
 		}
+	 }
 	}
     //done
     return 0;
