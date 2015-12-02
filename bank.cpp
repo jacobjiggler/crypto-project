@@ -69,7 +69,6 @@ int user_session(int new_fd, userInfo& user){
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
         temp = temp * -1;
-        printf("amount: %d\n", temp);
         int error = user.add_balance(temp);
         //overflow(too high)
         if (error > 0){
@@ -110,7 +109,6 @@ int user_session(int new_fd, userInfo& user){
         int temp = atoi(amount);
         int temp2 = temp * -1;
         char username2[n - (index + 2)];
-        printf("start index: %d, length: %d \n", index + 1, n - (index + 2));
         strncpy(username2, buffer + index + 1, n - (index + 2));
         printf("username2 %s\n",username2);
         std::map<std::string, userInfo>::iterator it;
@@ -213,7 +211,6 @@ int session(int new_fd){
                     perror("send");
                     //increment attempt counter
                     attempts++;
-										printf("%d attempts \n", attempts);
               }
             }
             else {
@@ -228,7 +225,6 @@ int session(int new_fd){
         }
         }
       else {
-        printf("login error. here is buffer: %s \n", buffer);
         if (send(new_fd, "Please enter a valid username in the format login[username]", 60, 0) == -1)
             perror("send");
       }
@@ -332,30 +328,30 @@ void *admin_panel(void*){
 			continue;
 		}
 	}
-	else if(1) {
-		/*
-		int error = user.error_check(temp2);
-		int error2 = user2.error_check(temp);
-		//not enough balance
-		if(error < 0){
-			if (send(new_fd, "Insufficient funds", 19, 0) == -1)
-					perror("send");
-
+	else if(( "deposit[" == input.substr(0,8))) {
+		int index = input.find(']');
+		std::string username = input.substr(8,index - 8);
+		std::string amount = input.substr(index + 2,input.length() - index - 3);
+		std::cout << "username " + username  + " amount " + amount << std::endl;
+		std::map<std::string, userInfo>::iterator it;
+		it = users.find(username);
+		if(it != users.end()){
+			userInfo &user = it->second;
+			int error = user.error_check(std::stoi(amount));
+			if (error > 0){
+				std::cout << "That user has too much mulah. Please have them create a new account" << std::endl;
+				continue;
+			}
+			user.add_balance(std::stoi(amount));
+			std::cout << "balance: " + std::to_string(user.get_balance()) << std::endl;
 			continue;
-		}
-		if (error2 > 0){
-			if (send(new_fd, "Their balance is too high with the new number. Tell them to start a new bank account!", 86, 0) == -1)
-					perror("send");
-
-			continue;
-		}
-		user.add_balance(temp2);
-		user2.add_balance(temp);
-		if (send(new_fd, "Sent the $$$$", 14, 0) == -1)
-				perror("send");
-		int index = input.find('[') + 1;
-*/
 	}
+	else{
+		std::cout << "That user doesn't exist dude!" << std::endl;
+
+		}
+	}
+	std::cout << "invalid command" << std::endl;
 }
 	return 0;
 }
