@@ -155,47 +155,12 @@ int main(int argc , char *argv[])
       return 1;
     }
 
-
-	 /*//connect to host
-
-     c.conn(host , port);
-
-     string input;
-
-     cout << "Please input your username followed by .card" << endl;
-
-     //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
-
-     while(1){
-
-       //send some data
-
-       cin >> input;
-
-       c.send_data(input);
-
- 
-
-       //receive and echo reply
-
-       cout<<"----------------------------\n\n";
-
-       cout<<c.receive(1024);
-
-       cout<<"\n\n----------------------------\n\n";
-
-     }
-
-     //done
-
-     return 0;*/
-
 	string input;
     cout << "Please input your card number: " << endl;
 	cin >> input;
 	std::string line;
 	std::string username = "abc";
-  	std::ifstream myfile (input + ".card");
+  	std::ifstream myfile ((input + ".card").c_str());
 	  if (myfile.is_open())
 	  {
 		while ( getline (myfile,line) )
