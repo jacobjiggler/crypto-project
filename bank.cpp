@@ -121,7 +121,6 @@ int user_session(int new_fd, userInfo& user){
         int temp2 = temp * -1;
         char username2[n - (index + 2)];
         strncpy(username2, buffer + index + 1, n - (index + 2));
-        printf("username2 %s\n",username2);
         std::map<std::string, userInfo>::iterator it;
         std::string usr(username2);
 				pthread_mutex_lock(&users_lock);
@@ -192,7 +191,6 @@ int session(int new_fd){
       if (n > 7 && strncmp("login[\n", buffer, 6) == 0){
         char username[n-7];
         strncpy(username,buffer+ 6, n-7);
-        printf("%s\n",username);
         //if user in users list
         std::map<std::string, userInfo>::iterator it;
         std::string usr(username);
@@ -315,7 +313,6 @@ void users_init(){
 	  balance = atoi(line_info[1].c_str());
       new_user.init(pin,balance);
       users.insert(std::pair<std::string, userInfo>(line_info[0],new_user));
-	  //std::cout << line_info[0] << pin << balance;
     }
     myfile.close();
   }
