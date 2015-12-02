@@ -43,7 +43,6 @@ int userInfo::add_balance(int input){
 	else
 	{
 		return temp;
-		printf("what?\n");
 	}
 }
 

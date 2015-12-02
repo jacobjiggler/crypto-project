@@ -306,19 +306,62 @@ void users_init(){
 
 void *connection_handler(void* input){
 	int new_fd =  *((int *)input);
-	int temp = session(new_fd);
+	session(new_fd);
 
 	printf("closed connection\n");
-	//we may need to remove this
-	//close(new_fd);
+	return 0;
+}
+void *admin_panel(void*){
+	printf("Welcome Admin\n");
+	std::string input;
+	while(1){
+		std::cin >> input;
+		if( "balance[" == input.substr(0,8)){
+			//char username[input.length() - 9];
+			std::string username = input.substr(8,input.length()-9);
+			std::cout << username << std::endl;
+			std::map<std::string, userInfo>::iterator it;
+			it = users.find(username);
+			if(it != users.end()){
+			userInfo &user2 = it->second;
+			std::cout << "balance: " + std::to_string(user2.get_balance()) << std::endl;
+			continue;
+		}
+		else {
+			std::cout << "That user doesn't exist dude!" << std::endl;
+			continue;
+		}
+	}
+	else if(1) {
+		/*
+		int error = user.error_check(temp2);
+		int error2 = user2.error_check(temp);
+		//not enough balance
+		if(error < 0){
+			if (send(new_fd, "Insufficient funds", 19, 0) == -1)
+					perror("send");
+
+			continue;
+		}
+		if (error2 > 0){
+			if (send(new_fd, "Their balance is too high with the new number. Tell them to start a new bank account!", 86, 0) == -1)
+					perror("send");
+
+			continue;
+		}
+		user.add_balance(temp2);
+		user2.add_balance(temp);
+		if (send(new_fd, "Sent the $$$$", 14, 0) == -1)
+				perror("send");
+		int index = input.find('[') + 1;
+*/
+	}
+}
+	return 0;
 }
 
 int main(int argc , char *argv[])
 {
-    //temp user for testing. remove this code later
-    //userInfo temp_user;
-    //temp_user.init(3333,300);
-    //users.insert(std::pair<std::string, userInfo>("123",temp_user));
 
     if (argc !=  2){
       std::cout << "bad arguments" << std::endl;
@@ -389,6 +432,12 @@ int main(int argc , char *argv[])
     }
 
     printf("server: waiting for connections...\n");
+		pthread_t thread_id;
+		if( pthread_create( &thread_id , NULL ,  admin_panel, 0) < 0)
+			{
+					perror("failed to create thread");
+					return 1;
+			}
     while(1) {  // main accept() loop
 
         sin_size = sizeof their_addr;
@@ -402,8 +451,8 @@ int main(int argc , char *argv[])
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
-				pthread_t thread_id;
-				if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &new_fd) < 0)
+				pthread_t thread_id2;
+				if( pthread_create( &thread_id2 , NULL ,  connection_handler , (void*) &new_fd) < 0)
 	        {
 	            perror("failed to create thread");
 	            return 1;
