@@ -26,6 +26,9 @@
 #include <map>
 #include <ctime>
 #include <chrono>
+#include <sys/mman.h>
+#include <pthread.h>
+
 
 
 #define BACKLOG 10     // how many pending connections queue will hold
@@ -38,7 +41,7 @@ void reset_attempts(){
 	last_reset = std::chrono::system_clock::now();
 }
 
-int user_session(int new_fd, userInfo user){
+int user_session(int new_fd, userInfo& user){
   char buffer[30];
   while(1){
     bzero(buffer,30);
@@ -66,7 +69,7 @@ int user_session(int new_fd, userInfo user){
         strncpy(amount, buffer + 9, n-10);
         int temp = atoi(amount);
         temp = temp * -1;
-        printf("%d\n", temp);
+        printf("amount: %d\n", temp);
         int error = user.add_balance(temp);
         //overflow(too high)
         if (error > 0){
@@ -106,7 +109,6 @@ int user_session(int new_fd, userInfo user){
         strncpy(amount, buffer + 9, index-9);
         int temp = atoi(amount);
         int temp2 = temp * -1;
-        printf("temp %d\n", temp);
         char username2[n - (index + 2)];
         printf("start index: %d, length: %d \n", index + 1, n - (index + 2));
         strncpy(username2, buffer + index + 1, n - (index + 2));
@@ -115,7 +117,7 @@ int user_session(int new_fd, userInfo user){
         std::string usr(username2);
         it = users.find(usr);
         if(it != users.end()){
-        userInfo user2 = it->second;
+        userInfo &user2 = it->second;
         int error = user.error_check(temp2);
         int error2 = user2.error_check(temp);
         //not enough balance
@@ -143,30 +145,6 @@ int user_session(int new_fd, userInfo user){
               perror("send");
           continue;
         }
-        //find user
-        /*
-        //run account checks on both
-        //overflow(too high)
-        if (error > 0){
-          if (send(new_fd, "Your balance is too high with the new number. Start a new bank account!", 72, 0) == -1)
-              perror("send");
-
-          continue;
-        }
-        //not enough balance
-        else if(error < 0){
-          if (send(new_fd, "Insufficient funds", 19, 0) == -1)
-              perror("send");
-
-          continue;
-        }
-        std::string s = std::to_string(user.get_balance());
-        char const *pchar = s.c_str();
-        //if (send(new_fd, "New Balance:", 13, 0) == -1)
-            //perror("send");
-        if (send(new_fd, pchar, s.length() + 1, 0) == -1)
-            perror("send");
-            */
         continue;
       }
       //logout
@@ -196,10 +174,8 @@ int session(int new_fd){
     bzero(buffer,30);
     int n = read(new_fd,buffer,30);
     if (n > 0){
-      printf("%d\n", n);
       if (n > 7 && strncmp("login[\n", buffer, 6) == 0){
         char username[n-7];
-        printf("ahhh yea\n");
         strncpy(username,buffer+ 6, n-7);
         printf("%s\n",username);
         //if user in users list
@@ -210,25 +186,25 @@ int session(int new_fd){
           if (send(new_fd, "Please enter your pin, friend", 31, 0) == -1)
               perror("send");
           while(1){
-			now = std::chrono::system_clock::now();
-			duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
-			if (duration.count() > 1200){
-				reset_attempts();			
-			}
-            //attempts check
-            if (attempts > 5){
-              if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
-                  perror("send");
-              break;
-            }
             bzero(buffer,30);
             int n = read(new_fd,buffer,30);
+						now = std::chrono::system_clock::now();
+						duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
+						if (duration.count() > 1200){
+							reset_attempts();
+						}
+						//attempts check
+						if (attempts > 4){
+							if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
+									perror("send");
+							return 0;
+						}
             if (n > 0){
               //check if pins are the same
               if (it->second.get_pin() == atoi(buffer)){
                 if (send(new_fd, "Logged in", 10, 0) == -1)
                     perror("send");
-                  if (user_session(new_fd,it->second) == -1)
+                  if (user_session(new_fd,(it->second)) == -1)
                     return -1;
                   break;
               }
@@ -237,6 +213,7 @@ int session(int new_fd){
                     perror("send");
                     //increment attempt counter
                     attempts++;
+										printf("%d attempts \n", attempts);
               }
             }
             else {
@@ -251,6 +228,7 @@ int session(int new_fd){
         }
         }
       else {
+        printf("login error. here is buffer: %s \n", buffer);
         if (send(new_fd, "Please enter a valid username in the format login[username]", 60, 0) == -1)
             perror("send");
       }
@@ -324,6 +302,15 @@ void users_init(){
     myfile.close();
   }
   else std::cout << "Unable to open file";
+}
+
+void *connection_handler(void* input){
+	int new_fd =  *((int *)input);
+	int temp = session(new_fd);
+
+	printf("closed connection\n");
+	//we may need to remove this
+	//close(new_fd);
 }
 
 int main(int argc , char *argv[])
@@ -403,7 +390,7 @@ int main(int argc , char *argv[])
 
     printf("server: waiting for connections...\n");
     while(1) {  // main accept() loop
-		
+
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1) {
@@ -415,15 +402,13 @@ int main(int argc , char *argv[])
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
-
-        if (!fork()) { // this is the child process
-            close(sockfd); // child doesn't need the listener
-            session(new_fd);
-            printf("closed connection\n");
-            close(new_fd);
-            exit(0);
-        }
-        close(new_fd);  // parent doesn't need this
+				pthread_t thread_id;
+				if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &new_fd) < 0)
+	        {
+	            perror("failed to create thread");
+	            return 1;
+	        }
+        //close(new_fd);  // parent doesn't need this
     }
 
     return 0;
