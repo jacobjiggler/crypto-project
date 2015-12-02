@@ -41,7 +41,10 @@ int userInfo::add_balance(int input){
 		return 0;
 	}
 	else
+	{
 		return temp;
+		printf("what?\n");
+	}
 }
 
 int userInfo::get_pin(){

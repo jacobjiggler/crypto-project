@@ -26,6 +26,9 @@
 #include <map>
 #include <ctime>
 #include <chrono>
+#include <sys/mman.h>
+#include <pthread.h>
+
 
 
 #define BACKLOG 10     // how many pending connections queue will hold
@@ -38,7 +41,7 @@ void reset_attempts(){
 	last_reset = std::chrono::system_clock::now();
 }
 
-int user_session(int new_fd, userInfo user){
+int user_session(int new_fd, userInfo& user){
   char buffer[30];
   while(1){
     bzero(buffer,30);
@@ -114,7 +117,7 @@ int user_session(int new_fd, userInfo user){
         std::string usr(username2);
         it = users.find(usr);
         if(it != users.end()){
-        userInfo user2 = it->second;
+        userInfo &user2 = it->second;
         int error = user.error_check(temp2);
         int error2 = user2.error_check(temp);
         //not enough balance
@@ -183,25 +186,25 @@ int session(int new_fd){
           if (send(new_fd, "Please enter your pin, friend", 31, 0) == -1)
               perror("send");
           while(1){
-			now = std::chrono::system_clock::now();
-			duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
-			if (duration.count() > 1200){
-				reset_attempts();			
-			}
-            //attempts check
-            if (attempts > 5){
-              if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
-                  perror("send");
-              break;
-            }
             bzero(buffer,30);
             int n = read(new_fd,buffer,30);
+						now = std::chrono::system_clock::now();
+						duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
+						if (duration.count() > 1200){
+							reset_attempts();
+						}
+						//attempts check
+						if (attempts > 4){
+							if (send(new_fd, "Too many bad pin attempts. Please try again in 20 minutes. get_rect()", 70, 0) == -1)
+									perror("send");
+							return 0;
+						}
             if (n > 0){
               //check if pins are the same
               if (it->second.get_pin() == atoi(buffer)){
                 if (send(new_fd, "Logged in", 10, 0) == -1)
                     perror("send");
-                  if (user_session(new_fd,it->second) == -1)
+                  if (user_session(new_fd,(it->second)) == -1)
                     return -1;
                   break;
               }
@@ -210,6 +213,7 @@ int session(int new_fd){
                     perror("send");
                     //increment attempt counter
                     attempts++;
+										printf("%d attempts \n", attempts);
               }
             }
             else {
@@ -300,6 +304,15 @@ void users_init(){
   else std::cout << "Unable to open file";
 }
 
+void *connection_handler(void* input){
+	int new_fd =  *((int *)input);
+	int temp = session(new_fd);
+
+	printf("closed connection\n");
+	//we may need to remove this
+	//close(new_fd);
+}
+
 int main(int argc , char *argv[])
 {
     //temp user for testing. remove this code later
@@ -377,7 +390,7 @@ int main(int argc , char *argv[])
 
     printf("server: waiting for connections...\n");
     while(1) {  // main accept() loop
-		
+
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1) {
@@ -389,15 +402,13 @@ int main(int argc , char *argv[])
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
-
-        if (!fork()) { // this is the child process
-            close(sockfd); // child doesn't need the listener
-            session(new_fd);
-            printf("closed connection\n");
-            close(new_fd);
-            exit(0);
-        }
-        close(new_fd);  // parent doesn't need this
+				pthread_t thread_id;
+				if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &new_fd) < 0)
+	        {
+	            perror("failed to create thread");
+	            return 1;
+	        }
+        //close(new_fd);  // parent doesn't need this
     }
 
     return 0;
