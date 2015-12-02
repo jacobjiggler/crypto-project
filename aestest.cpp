@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "cryptopp/cryptlib.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/aes.h"
@@ -11,17 +12,22 @@
 using namespace std;
 using namespace CryptoPP;
 
-int encrypt(char* keyin, char* ptxt, byte* &ivin, char*& ctxt, char*& oadata){
+void generate_iv(byte iv[]){
+  AutoSeededRandomPool rnd;
+  memset( iv, 0, sizeof(iv) );
+  rnd.GenerateBlock(iv, 12);
+}
+
+int encrypt(char* keyin, char* ptxt, const byte iv[], char*& ctxt, char*& oadata){
 
 AutoSeededRandomPool rnd;
   
-  
 byte key[32]; memset( key, 0, sizeof(key) );
-byte iv[12]; memset( iv, 0, sizeof(iv) );
 byte rndadata[16]; memset(rndadata, 0 , sizeof(rndadata));
+
+ cout << "IVIN: " <<  iv << endl;
  
-rnd.GenerateBlock(iv, 12);
-ivin = iv;
+
 string thekey = "0123456789012345678901234567890";
 strcpy(key, keyin);
 
@@ -101,7 +107,7 @@ oadata = strdup(adata.c_str());
 return 0;
 }
 
-char* decrypt(byte iv, char* ikey, char* iadata, char* icipher){
+char* decrypt(byte iv[], char* ikey, char* iadata, char* icipher){
 byte key[32]; memset( key, 0, sizeof(key) );
 cout << "IV: " << endl;
 strcpy(key, ikey);
@@ -208,9 +214,10 @@ int main(void){
   char* oadata;
   char* octxt;
   char* outtext;
-  byte* iv;
-  memset( iv, 0, sizeof(iv) );
-  rnd.GenerateBlock(iv, 12);
+  cout << "BEFORE IV" << endl;
+  byte iv[12];
+  generate_iv(iv);
+  cout << "After IV" << endl;
   encrypt(keyca, ptxtca, iv, octxt, oadata);
   cout << octxt << endl; //", " <<  oadata << endl;
   outtext = decrypt(iv, key.c_str(), oadata, octxt); 
