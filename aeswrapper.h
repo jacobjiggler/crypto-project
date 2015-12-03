@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "cryptopp/cryptlib.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/aes.h"
@@ -11,17 +12,25 @@
 using namespace std;
 using namespace CryptoPP;
 
-int encrypt(char* keyin, char* ptxt, byte* &ivin, char*& ctxt, char*& oadata){
+
+enum rettypes {SUCCESS = 0, FAILURE = -1};
+
+void generate_iv(byte iv[]){
+  AutoSeededRandomPool rnd;
+  memset( iv, 0, sizeof(iv) );
+  rnd.GenerateBlock(iv, 12);
+}
+
+int encrypt(char* keyin, char* ptxt, const byte iv[], char*& ctxt, char*& oadata){
 
 AutoSeededRandomPool rnd;
   
-  
 byte key[32]; memset( key, 0, sizeof(key) );
-byte iv[12]; memset( iv, 0, sizeof(iv) );
 byte rndadata[16]; memset(rndadata, 0 , sizeof(rndadata));
+
+ cout << "IVIN: " <<  iv << endl;
  
-rnd.GenerateBlock(iv, 12);
-ivin = iv;
+
 string thekey = "0123456789012345678901234567890";
 strcpy(key, keyin);
 
@@ -73,6 +82,7 @@ try
      cerr << "Caught Exception..." << endl;
      cerr << e.what() << endl;
      cerr << endl;
+     return FAILURE;
    }
 
 /*********************************\
@@ -98,10 +108,10 @@ ctxt =  strdup(cipher.c_str()); //copy the cipher text and adata
 cout << ctxt << endl;
 oadata = strdup(adata.c_str());
 //cout << oadata << endl;
-return 0;
+return SUCCESS;
 }
 
-char* decrypt(byte iv, char* ikey, char* iadata, char* icipher){
+char* decrypt(byte iv[], char* ikey, char* iadata, char* icipher){
 byte key[32]; memset( key, 0, sizeof(key) );
 cout << "IV: " << endl;
 strcpy(key, ikey);
@@ -195,25 +205,42 @@ try
  if (flag == 0)
    out = strdup(rpdata.c_str());
  else
-   out = "Danger, danger of *******s.";
+   out = "Error!";
  return out;
 }
 
-int main(void){
-  AutoSeededRandomPool rnd;
-  string key = "01234567890123456789012345678901";
-  string ptxt = "transfer[987][123]";
-  char* ptxtca = (char *)ptxt.c_str();
-  char* keyca = (char *)key.c_str();
+int encrypt_send(char* key, char* &data){
   char* oadata;
   char* octxt;
   char* outtext;
-  byte* iv;
-  memset( iv, 0, sizeof(iv) );
-  rnd.GenerateBlock(iv, 12);
-  encrypt(keyca, ptxtca, iv, octxt, oadata);
-  cout << octxt << endl; //", " <<  oadata << endl;
-  outtext = decrypt(iv, key.c_str(), oadata, octxt); 
-  cout << "Out: "  << outtext << endl;
-  return 0;
+  byte iv[12];
+  generate_iv(iv);
+  if (encrypt(key, data, iv, octxt, oadata) == FAILURE){
+    return FAILURE;
+  }
+  string oadatas(oadata);
+  string octxts(octxt);
+  string ivs((char*) iv);
+  string output;
+  output = ivs + "-|-" + oadatas + "-|-" + octxts + "-|-";
+  cout <<"ThisOut: " << output << endl;
+  data = strdup(output.c_str());
+  return SUCCESS;
+}
+
+int decrypt_receive(char* key, char* &data){
+  string all(data);
+  string ivd = all.substr(0, all.find("-|-"));
+  cout << "IVD: " << ivd << endl;
+  string iadata = all.substr(ivd.size() + 3, 16);
+  cout << "IADATA: " << iadata << endl;
+  string ictxt = all.substr(ivd.size() + iadata.size() + 6, all.size() - (ivd.size() + iadata.size() + 6) - 3);
+  byte iv[12];
+  strcpy(iv, (char*)ivd.c_str());
+  string out(decrypt(iv, key, iadata.c_str(), ictxt.c_str()));
+  if (out == "ERROR"){
+    return FAILURE;
+  }
+  data = strdup(out.c_str());
+  return SUCCESS;
 }
