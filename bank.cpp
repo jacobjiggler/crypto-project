@@ -47,10 +47,10 @@ void reset_attempts(){
 }
 
 int user_session(int new_fd, userInfo& user){
-  char buffer[30];
+  char buffer[60];
   while(1){
-    bzero(buffer,30);
-    int n = read(new_fd,buffer,30);
+    bzero(buffer,60);
+    int n = read(new_fd,buffer,60);
     if (n > 0){
       //parsing
 
@@ -181,12 +181,12 @@ int user_session(int new_fd, userInfo& user){
 
 int session(int new_fd){
   //receive RSA here
-  char buffer[30];
+  char buffer[60];
   std::chrono::time_point<std::chrono::system_clock> now;
   std::chrono::duration<double, std::ratio<1, 1>> duration;
   while(1){
-    bzero(buffer,30);
-    int n = read(new_fd,buffer,30);
+    bzero(buffer,60);
+    int n = read(new_fd,buffer,60);
     if (n > 0){
       if (n > 7 && strncmp("login[\n", buffer, 6) == 0){
         char username[n-7];
@@ -199,8 +199,8 @@ int session(int new_fd){
           if (send(new_fd, "Please enter your pin, friend", 31, 0) == -1)
               perror("send");
           while(1){
-            bzero(buffer,30);
-            int n = read(new_fd,buffer,30);
+            bzero(buffer,60);
+            int n = read(new_fd,buffer,60);
 						now = std::chrono::system_clock::now();
 						duration = std::chrono::duration_cast<std::chrono::duration<double>>(now - last_reset);
 						if (duration.count() > 1200){
