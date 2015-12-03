@@ -10,6 +10,7 @@
 #include<arpa/inet.h> //inet_addr
 #include<netdb.h> //hostent
 #include<cstdlib>
+#include"aeswrapper.h" //encrypt_send, decrypt_receive
 using namespace std;
 
 /**
@@ -109,15 +110,16 @@ bool tcp_client::conn(string address , int port)
 /**
     Send data to the connected host
 */
-bool tcp_client::send_data(string data)
+bool tcp_client::send_data(string data, string key)
 {
+    encrypt_send(key, data);
     //Send some data
     if( send(sock , data.c_str() , strlen( data.c_str() ) , 0) < 0)
     {
         perror("Send failed : ");
         return false;
     }
-    cout<<"Data send\n";
+    cout<<"Data sent\n";
 
     return true;
 }
@@ -137,6 +139,7 @@ string tcp_client::receive(int size=512)
     }
 
     reply = buffer;
+    decrypt_receive(key, reply);
     return reply;
 }
 
@@ -185,7 +188,7 @@ int main(int argc , char *argv[])
 		  //send some data
 		  //SEND RSA PUBLIC THEN RECEIVE BANK'S RSA
 			cin >> input;		
-			c.send_data(input);
+			c.send_data(input, key);
 		  	//receive and echo reply
 		  	cout<<"----------------------------\n\n";
 			bank_msg = c.receive(1024);
